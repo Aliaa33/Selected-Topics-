@@ -1,5 +1,7 @@
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
@@ -8,23 +10,41 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 public class HitCountDriver {
 
     public static void main(String[] args) throws Exception {
+        if (args.length < 2) {
+            System.err.println("Usage: HitCountDriver <inputPath> <outputPath>");
+            System.exit(1);
+        }
+
+        String inputPath = args[0];
+        String outputPath = args[1];
+
+        // Set up the job configuration
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "hit count");
-
         job.setJarByClass(HitCountDriver.class);
         job.setMapperClass(HitCountMapper.class);
         job.setReducerClass(HitCountReducer.class);
         job.setPartitionerClass(MonthPartitioner.class);
-
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
-
         job.setInputFormatClass(TextInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
 
-        TextInputFormat.addInputPath(job, new Path(args[0]));
-        TextOutputFormat.setOutputPath(job, new Path(args[1]));
+        // Set the input and output paths
+        TextInputFormat.setInputPaths(job, inputPath);
+        TextInputFormat.addInputPath(job, new Path(inputPath));
+        TextInputFormat.setInputDirRecursive(job, true);
 
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+        Path outputDir = new Path(outputPath);
+        TextOutputFormat.setOutputPath(job, outputDir);
+
+        // Delete the output directory if it exists
+        FileSystem fs = FileSystem.get(conf);
+        if (fs.exists(outputDir)) {
+            fs.delete(outputDir, true);
+        }
+
+        // Run the job
+        job.waitForCompletion(true);
     }
 }
