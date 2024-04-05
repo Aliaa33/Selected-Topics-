@@ -1,0 +1,22 @@
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+import java.io.IOException;
+
+public class HitCountMapper extends Mapper<LongWritable, Text, Text, Text> {
+
+    private Text monthUserIPAndApi = new Text();
+
+    @Override
+    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        String[] parts = value.toString().split(" ");
+        String user_ip = parts[0]; // Assuming the user IP is at index 0 in the log entry
+        String api = parts[6]; // Assuming the API is at index 6 in the log entry
+        String date = parts[3].substring(1); // Get date without '['
+        String month_str = date.split("/")[1];
+        String outputKey = "(" + month_str + ", " + user_ip + ", " + api + ")";
+        monthUserIPAndApi.set(outputKey);
+        context.write(monthUserIPAndApi, new Text(""));
+    }
+}
