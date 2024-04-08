@@ -1,3 +1,4 @@
+
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -5,7 +6,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 
 import java.util.HashMap;
 
-public class MonthPartitioner extends Partitioner<Text, Text> implements Configurable {
+public class HitCountPartitioner extends Partitioner<Text, Text> implements Configurable {
     private Configuration configuration;
     private HashMap<String, Integer> months = new HashMap<>();
 
@@ -34,8 +35,6 @@ public class MonthPartitioner extends Partitioner<Text, Text> implements Configu
 
     @Override
     public int getPartition(Text key, Text value, int numPartitions) {
-        String[] parts = key.toString().split(", ");
-        String month = parts[0].substring(1); // Extract the month from the key
-        return months.get(month);
+        return months.get(value.toString());
     }
 }
